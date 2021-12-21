@@ -1,0 +1,16 @@
+name: arb_excel
+description: A sample command-line application.
+version: 0.0.1-dev
+homepage: https://github.com/ez-connect/arb_excel
+
+environment:
+  sdk: '>=2.15.0 <3.0.0'
+
+dependencies:
+  args: ^2.3.0
+  excel: ^2.0.0-null-safety-3
+  path: ^1.8.1
+
+dev_dependencies:
+  lints: ^1.0.0
+  test: ^1.16.0
