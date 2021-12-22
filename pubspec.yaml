@@ -1,6 +1,6 @@
 name: arb_excel
 description: Generates ARB files from an Excel file or create an Excel file from ARB files.
-version: 0.0.2-dev
+version: 0.0.3-dev
 homepage: https://github.com/ez-connect/arb_excel
 
 environment:

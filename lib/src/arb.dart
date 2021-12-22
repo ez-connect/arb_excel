@@ -20,7 +20,10 @@ void writeARB(String filename, Translation data) {
 
     var buf = [];
     for (final item in data.items) {
-      buf.add(item.toJSON(lang, isDefault));
+      final data = item.toJSON(lang, isDefault);
+      if (data != null) {
+        buf.add(item.toJSON(lang, isDefault));
+      }
     }
 
     buf = ['{', buf.join(',\n'), '}\n'];
@@ -56,8 +59,10 @@ class ARBItem {
   final Map<String, String> translations;
 
   /// Serialize in JSON.
-  String toJSON(String lang, [bool isDefault = false]) {
-    final value = translations[lang] ?? '';
+  String? toJSON(String lang, [bool isDefault = false]) {
+    final value = translations[lang];
+    if (value == null || value.isEmpty) return null;
+
     final args = getArgs(value);
     final hasMetadata = isDefault && (args.isNotEmpty || description != null);
 

@@ -6,3 +6,8 @@
 
 - Fixed embeded the excel template
 - Fixed ARB format
+
+## 0.0.3-dev
+
+- Add condition formats to the template
+- Fixed default translation
