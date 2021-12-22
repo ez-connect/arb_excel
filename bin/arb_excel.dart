@@ -27,7 +27,7 @@ void main(List<String> args) {
 
   if (flags['new']) {
     stdout.writeln('Create new Excel file for translation: $filename');
-    File('example/example.xlsx').copySync(filename);
+    newTemplate(filename);
     exit(0);
   }
 

@@ -5,13 +5,9 @@
 .DEFAULT_GOAL := run
 .PHONY: doc test build
 
-# Service
-name := arb_sheet
-version := 0.0.1
-
-# Git
-gitBranch := $(shell git rev-parse --abbrev-ref HEAD)
-gitCommit := $(shell git rev-parse --short HEAD)
+# # Git
+# gitBranch := $(shell git rev-parse --abbrev-ref HEAD)
+# gitCommit := $(shell git rev-parse --short HEAD)
 
 clean:
 	@git clean -fdx
@@ -28,18 +24,24 @@ lint:
 doc:
 	@dart pub global run dartdoc
 
-run:
+assets:
+	@dart run lib/src/packer.dart
+	@make -s fmt
+
+run: assets
 	@dart run bin/arb_excel.dart -n example/test.xlsx
 	@dart run bin/arb_excel.dart -a example/test.xlsx
 
-build:
-	@dart compile aot-snapshot bin/arb_excel.dart
+build: assets
+	@mkdir -p build
+	@dart compile exe bin/arb_excel.dart -o build/arb_excel
+	@dart compile aot-snapshot bin/arb_excel.dart -o build/arb_excel.aot
 
-active:
+active: assets
 	@dart pub global activate --source path .
 
-publish-test:
+publish-test: build
 	@dart pub publish --dry-run
 
-publish:
+publish: publish-test
 	@dart pub publish

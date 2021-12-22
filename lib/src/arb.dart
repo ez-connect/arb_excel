@@ -13,15 +13,17 @@ Translation parseARB(String filename) {
 
 /// Writes [Translation] to .arb files.
 void writeARB(String filename, Translation data) {
-  for (final lang in data.languages) {
+  for (var i = 0; i < data.languages.length; i++) {
+    final lang = data.languages[i];
+    final isDefault = i == 0;
     final f = File('${withoutExtension(filename)}_$lang.arb');
 
-    final bufItems = [];
+    var buf = [];
     for (final item in data.items) {
-      bufItems.add(item.toJSON(lang));
+      buf.add(item.toJSON(lang, isDefault));
     }
 
-    final buf = ['{', bufItems.join(',\n'), '}'];
+    buf = ['{', buf.join(',\n'), '}\n'];
     f.writeAsStringSync(buf.join('\n'));
   }
 }
@@ -54,27 +56,32 @@ class ARBItem {
   final Map<String, String> translations;
 
   /// Serialize in JSON.
-  String toJSON(String lang) {
+  String toJSON(String lang, [bool isDefault = false]) {
     final value = translations[lang] ?? '';
     final args = getArgs(value);
-    final hasMetadata = args.isNotEmpty || description != null;
+    final hasMetadata = isDefault && (args.isNotEmpty || description != null);
 
     final List<String> buf = [];
 
     if (hasMetadata) {
       buf.add('  "$text": "$value",');
       buf.add('  "@$text": {');
-      if (description != null) {
-        buf.add('    "description": "$description"');
-      }
 
-      if (args.isNotEmpty) {
-        buf.add('    "placeholders": {');
-        final List<String> argsBuf = [];
-        for (final arg in args) {
-          argsBuf.add('      "$arg": {"type": "String"}');
+      if (args.isEmpty) {
+        if (description != null) {
+          buf.add('    "description": "$description"');
         }
-        buf.add(argsBuf.join(',\n'));
+      } else {
+        if (description != null) {
+          buf.add('    "description": "$description",');
+        }
+
+        buf.add('    "placeholders": {');
+        final List<String> group = [];
+        for (final arg in args) {
+          group.add('      "$arg": {"type": "String"}');
+        }
+        buf.add(group.join(',\n'));
         buf.add('    }');
       }
 

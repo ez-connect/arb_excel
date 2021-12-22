@@ -1,5 +1,7 @@
+import 'dart:convert';
 import 'dart:io';
 
+import 'package:arb_excel/src/assets.dart';
 import 'package:excel/excel.dart';
 
 import 'arb.dart';
@@ -10,6 +12,14 @@ const _kColCategory = 0;
 const _kColText = 1;
 const _kColDescription = 2;
 const _kColValue = 3;
+
+/// Create a new Excel template file.
+///
+/// Embedded data will be packed via `template.dart`.
+void newTemplate(String filename) {
+  final buf = base64Decode(kTemplate);
+  File(filename).writeAsBytesSync(buf);
+}
 
 /// Reads Excel sheet.
 ///
