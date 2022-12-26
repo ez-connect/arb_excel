@@ -43,15 +43,15 @@ Translation parseExcel({
   for (int i = valueRow; i < sheet.rows.length; i++) {
     final row = sheet.rows[i];
     final item = ARBItem(
-      category: row[_kColCategory]?.value,
-      text: row[_kColText]?.value,
-      description: row[_kColDescription]?.value,
+      category: row[_kColCategory]?.value?.toString(),
+      text: row[_kColText]?.value?.toString() ?? '',
+      description: row[_kColDescription]?.value?.toString(),
       translations: {},
     );
 
     for (int i = _kColValue; i < sheet.maxCols; i++) {
-      final lang = columns[i]?.value ?? i.toString();
-      item.translations[lang] = row[i]?.value ?? '';
+      final lang = columns[i]?.value?.toString() ?? i.toString();
+      item.translations[lang] = row[i]?.value?.toString() ?? '';
     }
 
     items.add(item);
@@ -59,7 +59,7 @@ Translation parseExcel({
 
   final languages = columns
       .where((e) => e != null && e.colIndex >= _kColValue)
-      .map<String>((e) => e?.value)
+      .map<String>((e) => e?.value?.toString() ?? '')
       .toList();
   return Translation(languages: languages, items: items);
 }
