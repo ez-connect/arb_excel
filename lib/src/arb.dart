@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:path/path.dart';
@@ -5,10 +6,71 @@ import 'package:path/path.dart';
 /// To match all args from a text.
 final _kRegArgs = RegExp(r'{(\w+)}');
 
+String? determineLocale(String path) {
+  var idx = path.lastIndexOf(".");
+  path = path.substring(0, idx);
+  idx = path.lastIndexOf("_");
+  if (idx < 0) {
+    return null;
+  }
+  var result = path.substring(idx+1);
+  if (result.toLowerCase() != result) {
+    idx = path.lastIndexOf("_", idx-1);
+  }
+  return path.substring(idx+1);
+}
+
+void readArbItems(File f, Map<String, ARBItem> items, String locale) {
+  final s = f.readAsStringSync();
+  final m = jsonDecode(s);
+  if (m is Map) {
+    for (final e in m.entries) {
+      if (e.key.startsWith('@')) {
+        continue;
+      }
+      final item = items.putIfAbsent(e.key, () => ARBItem(text: e.key, translations: {}));
+      item.translations[locale] = e.value;
+      final meta = m['@${e.key}'];
+      if (meta is Map) {
+        final d = meta['description'];
+        if (d != null) {
+          item.description = d;
+        }
+      }
+    }
+  }
+}
+
+///
 /// Parses .arb files to [Translation].
-/// The [filename] is the main language.
-Translation parseARB(String filename) {
-  throw UnimplementedError();
+/// The [filename] is the main language arb file or the name of the directory.
+///
+(Translation translation, String? file) parseARB(String filename) {
+  var d = Directory(filename);
+  var languages = <String>[];
+  var arbItems = <String, ARBItem>{};
+  if (!d.existsSync()) {
+    d = File(filename).parent;
+    if (!d.existsSync()) {
+      throw Exception("Directory $d cannot be found");
+    }
+  }
+  String? file;
+  for (final f in d.listSync()) {
+    final p = basename(f.path);
+    if (f is! File || !p.endsWith(".arb")) {
+      continue;
+    }
+    final locale = determineLocale(p);
+    if (locale == null) {
+      continue;
+    }
+    file = f.path.substring(0, f.path.length - 4 - 1 - locale.length);
+    languages.add(locale);
+    readArbItems(f, arbItems, locale);
+  }
+  final t = Translation(languages: languages, items: arbItems.values.toList()..sort((a,b) => a.text.compareTo(b.text)));
+  return (t, file);
 }
 
 /// Writes [Translation] to .arb files.
@@ -55,7 +117,7 @@ class ARBItem {
 
   final String? category;
   final String text;
-  final String? description;
+  String? description;
   final Map<String, String> translations;
 
   /// Serialize in JSON.

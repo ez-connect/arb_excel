@@ -17,3 +17,10 @@
 ## 0.0.4
 
 - Support `ShareString`
+
+## 0.1.0
+
+- Support generating Excel Files from ARB Files
+- Added command line option to determine name of the output file to generate
+- Added command line option to define the *lead locale* used as the source locale in translation excels created.
+- Migrated to Flutter 3.27.x and newer versions of used Excel Plugin.
