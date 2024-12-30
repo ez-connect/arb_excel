@@ -45,9 +45,9 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale) {
 /// Parses .arb files to [Translation].
 /// The [filename] is the main language arb file or the name of the directory.
 ///
-(Translation translation, String? file) parseARB(String filename) {
+(Translation translation, String? file) parseARB(String filename, {List<String>? targetLocales, String? leadLocale}) {
   var d = Directory(filename);
-  var languages = <String>[];
+  var locales = <String>[];
   var arbItems = <String, ARBItem>{};
   if (!d.existsSync()) {
     d = File(filename).parent;
@@ -65,19 +65,21 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale) {
     if (locale == null) {
       continue;
     }
-    file = f.path.substring(0, f.path.length - 4 - 1 - locale.length);
-    languages.add(locale);
-    readArbItems(f, arbItems, locale);
+    if (locale == leadLocale || (leadLocale == null && locales.isEmpty) || (targetLocales != null && targetLocales.contains(locale))) {
+      file = f.path.substring(0, f.path.length - 4 - 1 - locale.length);
+      locales.add(locale);
+      readArbItems(f, arbItems, locale);
+    }
   }
-  final t = Translation(languages: languages, items: arbItems.values.toList()..sort((a,b) => a.text.compareTo(b.text)));
+  final t = Translation(languages: locales, items: arbItems.values.toList()..sort((a,b) => a.text.compareTo(b.text)));
   return (t, file);
 }
 
 /// Writes [Translation] to .arb files.
-void writeARB(String filename, Translation data) {
+void writeARB(String filename, Translation data, bool includeLeadLocale) {
   for (var i = 0; i < data.languages.length; i++) {
     final lang = data.languages[i];
-    final isDefault = i == 0;
+    final isDefault = includeLeadLocale && i == 0;
     final f = File('${withoutExtension(filename)}_$lang.arb');
 
     var buf = [];

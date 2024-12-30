@@ -24,3 +24,4 @@
 - Added command line option to determine name of the output file to generate
 - Added command line option to define the *lead locale* used as the source locale in translation excels created.
 - Migrated to Flutter 3.27.x and newer versions of used Excel Plugin.
+- Added support for importing and exporting selected languages only (including and not including the lead locale resources).
