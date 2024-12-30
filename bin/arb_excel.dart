@@ -14,7 +14,11 @@ void main(List<String> args) {
   parse.addFlag('arb',
       abbr: 'a', defaultsTo: false, help: 'Export to ARB files');
   parse.addFlag('excel',
-      abbr: 'e', defaultsTo: false, help: 'Import ARB files to sheet');
+      abbr: 'e', defaultsTo: false, help: 'Import ARB files to sheet. Specify directory or name of main ARB file to import.');
+  parse.addOption('output',
+      abbr: 'o', help: 'Name of output file to create');
+  parse.addOption('leadLocale',
+      abbr: 'l', help: 'Name of the primary (aka lead) locale.');
   final flags = parse.parse(args);
 
   // Not enough args
@@ -23,8 +27,9 @@ void main(List<String> args) {
     exit(1);
   }
 
-  final filename = flags.rest.first;
-
+  var filename = flags.rest.first;
+  var inputFile = filename;
+  var outputFile = flags['output'];
   if (flags['new']) {
     stdout.writeln('Create new Excel file for translation: $filename');
     newTemplate(filename);
@@ -39,9 +44,15 @@ void main(List<String> args) {
   }
 
   if (flags['excel']) {
-    stdout.writeln('Generate Excel from: $filename');
     final data = parseARB(filename);
-    writeExcel('${withoutExtension(filename)}.xlsx', data);
+    final d = Directory(filename);
+    if (outputFile == null && d.existsSync() && data.$2 != null) {
+      outputFile = '${data.$2}.xlsx';
+    }
+    outputFile ??= '${withoutExtension(inputFile)}.xlsx';
+    stdout.writeln('Generate Excel file named $outputFile from: $inputFile');
+    var leadLocale = flags['leadLocale'] ?? data.$1.languages.firstOrNull;
+    writeExcel(outputFile, data.$1, leadLocale);
     exit(0);
   }
 }
