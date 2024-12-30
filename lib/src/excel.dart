@@ -8,10 +8,10 @@ import 'arb.dart';
 
 const _kRowHeader = 0;
 const _kRowValue = 1;
-const _kColCategory = 0;
-const _kColText = 1;
+const _kColText = 0;
 const _kColDescription = 2;
-const _kColValue = 3;
+const _kColValue = 1;
+const _kColTargetLangValue = 2;
 
 /// Create a new Excel template file.
 ///
@@ -27,41 +27,51 @@ void newTemplate(String filename) {
 /// from the template.
 Translation parseExcel({
   required String filename,
-  String sheetname = 'Text',
+  bool includeLeadLocale = false,
   int headerRow = _kRowHeader,
   int valueRow = _kRowValue,
 }) {
   final buf = File(filename).readAsBytesSync();
   final excel = Excel.decodeBytes(buf);
-  final sheet = excel.sheets[sheetname];
-  if (sheet == null) {
-    return Translation();
-  }
+  final languages = <String>[];
+  final items = <String,ARBItem>{};
+  bool firstLocale = true;
+  for (final sheet in excel.sheets.values) {
+    final idx = sheet.sheetName.lastIndexOf(" - ");
+    if (idx < 0) {
+      continue;
+    }
+    if (firstLocale && includeLeadLocale) {
+      final leadLocale = sheet.sheetName.substring(0, idx);
+      languages.add(leadLocale);
+      for (int i = valueRow; i < sheet.rows.length; i++) {
+        final row = sheet.rows[i];
+        var text = row[_kColText]?.value?.toString() ?? '';
 
-  final List<ARBItem> items = [];
-  final columns = sheet.rows[headerRow];
-  for (int i = valueRow; i < sheet.rows.length; i++) {
-    final row = sheet.rows[i];
-    final item = ARBItem(
-      category: row[_kColCategory]?.value?.toString(),
-      text: row[_kColText]?.value?.toString() ?? '',
-      description: row[_kColDescription]?.value?.toString(),
-      translations: {},
-    );
+        final item = items.putIfAbsent(text, () => ARBItem(
+          text: text,
+          description: row[_kColDescription]?.value?.toString(),
+          translations: {},
+        ));
+        item.translations[leadLocale] = row[_kColValue]?.value?.toString() ?? '';
+      }
+      firstLocale = false;
+    }
+    final locale = sheet.sheetName.substring(idx+3);
+    languages.add(locale);
+    for (int i = valueRow; i < sheet.rows.length; i++) {
+      final row = sheet.rows[i];
+      var text = row[_kColText]?.value?.toString() ?? '';
 
-    for (int i = _kColValue; i < sheet.maxColumns; i++) {
-      final lang = columns[i]?.value?.toString() ?? i.toString();
-      item.translations[lang] = row[i]?.value?.toString() ?? '';
+      final item = items.putIfAbsent(text, () => ARBItem(
+        text: text,
+        translations: {},
+      ));
+      item.translations[locale] = row[_kColTargetLangValue]?.value?.toString() ?? '';
     }
 
-    items.add(item);
   }
-
-  final languages = columns
-      .where((e) => e != null && e.columnIndex >= _kColValue)
-      .map<String>((e) => e?.value?.toString() ?? '')
-      .toList();
-  return Translation(languages: languages, items: items);
+  return Translation(languages: languages, items: items.values.toList());
 }
 
 /// Writes a Excel file, includes all translations.

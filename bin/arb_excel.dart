@@ -19,6 +19,10 @@ void main(List<String> args) {
       abbr: 'o', help: 'Name of output file to create');
   parse.addOption('leadLocale',
       abbr: 'l', help: 'Name of the primary (aka lead) locale.');
+  parse.addOption('targetLocales',
+      abbr: 't', help: 'A comma separated list of locale names to be included in the Excel file created.');
+  parse.addFlag('includeLeadLocale',
+      abbr: 'i', help: 'Whether the ARB file for the lead locale should be extracted from the Excel as well.');
   final flags = parse.parse(args);
 
   // Not enough args
@@ -38,20 +42,24 @@ void main(List<String> args) {
 
   if (flags['arb']) {
     stdout.writeln('Generate ARB from: $filename');
-    final data = parseExcel(filename: filename);
-    writeARB('${withoutExtension(filename)}.arb', data);
+    var includeLeadLocale = flags['includeLeadLocale'] ?? false;
+    final data = parseExcel(filename: filename, includeLeadLocale: includeLeadLocale);
+    writeARB('${withoutExtension(filename)}.arb', data, includeLeadLocale);
     exit(0);
   }
 
   if (flags['excel']) {
-    final data = parseARB(filename);
+    final targetLocales = flags['targetLocales'];
+    var targetLocaleList = targetLocales?.split(",");
+    var leadLocale = flags['leadLocale'];
+    final data = parseARB(filename, targetLocales: targetLocaleList, leadLocale: leadLocale);
     final d = Directory(filename);
     if (outputFile == null && d.existsSync() && data.$2 != null) {
       outputFile = '${data.$2}.xlsx';
     }
     outputFile ??= '${withoutExtension(inputFile)}.xlsx';
     stdout.writeln('Generate Excel file named $outputFile from: $inputFile');
-    var leadLocale = flags['leadLocale'] ?? data.$1.languages.firstOrNull;
+    leadLocale ??= data.$1.languages.firstOrNull;
     writeExcel(outputFile, data.$1, leadLocale);
     exit(0);
   }
