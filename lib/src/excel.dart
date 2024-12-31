@@ -9,9 +9,10 @@ import 'arb.dart';
 const _kRowHeader = 0;
 const _kRowValue = 1;
 const _kColText = 0;
-const _kColDescription = 2;
 const _kColValue = 1;
 const _kColTargetLangValue = 2;
+const _kColDescription = 3;
+const _kColContext = 4;
 
 /// Create a new Excel template file.
 ///
@@ -74,6 +75,8 @@ Translation parseExcel({
   return Translation(languages: languages, items: items.values.toList());
 }
 
+String? _quote(String? text) => text?.replaceAll('\n', r'\n');
+
 /// Writes a Excel file, includes all translations.
 void writeExcel(String filename, Translation data, String leadLocale) {
   var excel = Excel.createExcel();
@@ -89,32 +92,50 @@ void writeExcel(String filename, Translation data, String leadLocale) {
       excel.delete(defaultSheet);
       defaultSheet = null;
     }
-    sheetObject.setColumnWidth(0, 30);
-    sheetObject.setColumnWidth(1, 60);
-    sheetObject.setColumnWidth(2, 60);
-    sheetObject.setColumnWidth(3, 90);
+    var bgColor = ExcelColor.grey200;
+    sheetObject.setColumnWidth(_kColText, 30);
+    sheetObject.setColumnWidth(_kColValue, 60);
+    sheetObject.setColumnWidth(_kColTargetLangValue, 60);
+    sheetObject.setColumnWidth(_kColDescription, 90);
+    sheetObject.setColumnWidth(_kColContext, 30);
     sheetObject.appendRow([
       TextCellValue('Key'),
       TextCellValue('Text'),
       TextCellValue('Target Language Text'),
-      TextCellValue('Description')
+      TextCellValue('Description'),
+      TextCellValue('Context')
     ]);
-    var cell = sheetObject.cell(CellIndex.indexByString('A1'));
-    cell.cellStyle = CellStyle(bold: true);
-    cell = sheetObject.cell(CellIndex.indexByString('B1'));
-    cell.cellStyle = CellStyle(bold: true);
-    cell = sheetObject.cell(CellIndex.indexByString('C1'));
-    cell.cellStyle = CellStyle(bold: true);
-    cell = sheetObject.cell(CellIndex.indexByString('D1'));
-    cell.cellStyle = CellStyle(bold: true);
+    var boldStyle = CellStyle(backgroundColorHex: bgColor, bold: true, bottomBorder: Border(borderColorHex: ExcelColor.black, borderStyle: BorderStyle.Thick));
+    var cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColText, rowIndex: _kRowHeader));
+    cell.cellStyle = boldStyle;
+    cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColValue, rowIndex: _kRowHeader));
+    cell.cellStyle = boldStyle;
+    cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColTargetLangValue, rowIndex: _kRowHeader));
+    cell.cellStyle = boldStyle;
+    cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColDescription, rowIndex: _kRowHeader));
+    cell.cellStyle = boldStyle;
+    cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColContext, rowIndex: _kRowHeader));
+    cell.cellStyle = boldStyle;
+    var disabledStyle = CellStyle(backgroundColorHex: bgColor);
+    int rowIdx = _kRowValue;
     for (var item in data.items) {
       var row = <CellValue>[
         TextCellValue(item.text),
-        TextCellValue(item.translations[leadLocale] ?? '?'),
-        TextCellValue(item.translations[targetLocale] ?? ''),
-        TextCellValue(item.description ?? '')
+        TextCellValue(_quote(item.translations[leadLocale]) ?? '?'),
+        TextCellValue(_quote(item.translations[targetLocale]) ?? ''),
+        TextCellValue(item.description ?? ''),
+        TextCellValue(item.context ?? '')
       ];
       sheetObject.appendRow(row);
+      var cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColText, rowIndex: rowIdx));
+      cell.cellStyle = disabledStyle;
+      cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColValue, rowIndex: rowIdx));
+      cell.cellStyle = disabledStyle;
+      cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColDescription, rowIndex: rowIdx));
+      cell.cellStyle = disabledStyle;
+      cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColContext, rowIndex: rowIdx));
+      cell.cellStyle = disabledStyle;
+      rowIdx++;
     }
   }
   var bytes = excel.save(fileName: filename);

@@ -36,6 +36,10 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale) {
         if (d != null) {
           item.description = d;
         }
+        final c = meta['context'];
+        if (c != null) {
+          item.context = c;
+        }
       }
     }
   }
@@ -111,14 +115,14 @@ class ARBItem {
   }
 
   ARBItem({
-    this.category,
+    this.context,
     required this.text,
     this.description,
     this.translations = const {},
   });
 
-  final String? category;
   final String text;
+  String? context;
   String? description;
   final Map<String, String> translations;
 
@@ -143,6 +147,9 @@ class ARBItem {
       } else {
         if (description != null) {
           buf.add('    "description": "$description",');
+        }
+        if (context != null) {
+          buf.add('    "context": "$context",');
         }
 
         buf.add('    "placeholders": {');
