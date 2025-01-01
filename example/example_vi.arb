@@ -1,0 +1,18 @@
+{
+  "company": "Ez-Connect",
+  "welcome": "Xin chào, {name}",
+  "dashboard": "Dashboard",
+  "analytics": "Thống kê",
+  "support": "Hỗ trợ",
+  "subscriptionSetting": "Nâng cấp",
+  "paymentHistory": "Lịch sử giao dịch",
+  "language": "Ngôn ngữ",
+  "logout": "Đăng xuất",
+  "profile": "Tài khoản",
+  "firstName": "Họ",
+  "lastName": "Tên",
+  "email": "Email",
+  "phoneNumber": "Số điện thoại",
+  "country": "Quốc gia",
+  "campaignList": "Chiến dịch"
+}

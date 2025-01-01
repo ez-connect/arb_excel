@@ -8,11 +8,11 @@ import 'arb.dart';
 
 const _kRowHeader = 0;
 const _kRowValue = 1;
-const _kColText = 0;
-const _kColValue = 1;
-const _kColTargetLangValue = 2;
-const _kColDescription = 3;
-const _kColContext = 4;
+const _kColContext = 0;
+const _kColText = 1;
+const _kColDescription = 2;
+const _kColValue = 3;
+const _kColTargetLangValue = 4;
 
 /// Create a new Excel template file.
 ///
@@ -29,7 +29,6 @@ void newTemplate(String filename) {
 Translation parseExcel({
   required String filename,
   bool includeLeadLocale = false,
-  int headerRow = _kRowHeader,
   int valueRow = _kRowValue,
 }) {
   final buf = File(filename).readAsBytesSync();
@@ -38,12 +37,17 @@ Translation parseExcel({
   final items = <String,ARBItem>{};
   bool firstLocale = true;
   for (final sheet in excel.sheets.values) {
-    final idx = sheet.sheetName.lastIndexOf(" - ");
+    var idx = sheet.sheetName.lastIndexOf(" - ");
     if (idx < 0) {
-      continue;
+      // Support for original format.
+      if (sheet.sheetName != 'Text') {
+        continue;
+      }
     }
+    var rowHeader = sheet.rows[_kRowHeader];
+    var locale = rowHeader[_kColTargetLangValue]?.value?.toString() ?? 'vi';
+    var leadLocale = rowHeader[_kColValue]?.value?.toString() ?? 'en';
     if (firstLocale && includeLeadLocale) {
-      final leadLocale = sheet.sheetName.substring(0, idx);
       languages.add(leadLocale);
       for (int i = valueRow; i < sheet.rows.length; i++) {
         final row = sheet.rows[i];
@@ -51,6 +55,7 @@ Translation parseExcel({
 
         final item = items.putIfAbsent(text, () => ARBItem(
           text: text,
+          context: row[_kColContext]?.value?.toString(),
           description: row[_kColDescription]?.value?.toString(),
           translations: {},
         ));
@@ -58,7 +63,6 @@ Translation parseExcel({
       }
       firstLocale = false;
     }
-    final locale = sheet.sheetName.substring(idx+3);
     languages.add(locale);
     for (int i = valueRow; i < sheet.rows.length; i++) {
       final row = sheet.rows[i];
@@ -92,20 +96,23 @@ void writeExcel(String filename, Translation data, String leadLocale) {
       excel.delete(defaultSheet);
       defaultSheet = null;
     }
-    var bgColor = ExcelColor.grey200;
-    sheetObject.setColumnWidth(_kColText, 30);
+    var bgColorDoNotEdit = ExcelColor.fromHexString("#D6DCE4");
+    var bgColorHeader = ExcelColor.fromHexString("#4472C4");
+    sheetObject.setColumnWidth(_kColContext, 20);
+    sheetObject.setColumnWidth(_kColText, 25);
     sheetObject.setColumnWidth(_kColValue, 60);
     sheetObject.setColumnWidth(_kColTargetLangValue, 60);
     sheetObject.setColumnWidth(_kColDescription, 90);
-    sheetObject.setColumnWidth(_kColContext, 30);
     sheetObject.appendRow([
+      TextCellValue('Context'),
       TextCellValue('Key'),
-      TextCellValue('Text'),
-      TextCellValue('Target Language Text'),
       TextCellValue('Description'),
-      TextCellValue('Context')
+      TextCellValue(leadLocale),
+      TextCellValue(targetLocale),
     ]);
-    var boldStyle = CellStyle(backgroundColorHex: bgColor, bold: true, bottomBorder: Border(borderColorHex: ExcelColor.black, borderStyle: BorderStyle.Thick));
+    var boldStyle = CellStyle(backgroundColorHex: bgColorHeader, bold: true,
+        fontColorHex: ExcelColor.white,
+        bottomBorder: Border(borderColorHex: ExcelColor.black, borderStyle: BorderStyle.Thick));
     var cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColText, rowIndex: _kRowHeader));
     cell.cellStyle = boldStyle;
     cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColValue, rowIndex: _kRowHeader));
@@ -116,16 +123,16 @@ void writeExcel(String filename, Translation data, String leadLocale) {
     cell.cellStyle = boldStyle;
     cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColContext, rowIndex: _kRowHeader));
     cell.cellStyle = boldStyle;
-    var disabledStyle = CellStyle(backgroundColorHex: bgColor);
+    var disabledStyle = CellStyle(backgroundColorHex: bgColorDoNotEdit);
     int rowIdx = _kRowValue;
     for (var item in data.items) {
-      var row = <CellValue>[
-        TextCellValue(item.text),
-        TextCellValue(_quote(item.translations[leadLocale]) ?? '?'),
-        TextCellValue(_quote(item.translations[targetLocale]) ?? ''),
-        TextCellValue(item.description ?? ''),
-        TextCellValue(item.context ?? '')
-      ];
+      var row = <CellValue?>[];
+      row.length = 5;
+      row[_kColContext] = TextCellValue(item.context ?? '');
+      row[_kColText] = TextCellValue(item.text);
+      row[_kColValue] = TextCellValue(_quote(item.translations[leadLocale]) ?? '?');
+      row[_kColTargetLangValue] = TextCellValue(_quote(item.translations[targetLocale]) ?? '');
+      row[_kColDescription] = TextCellValue(item.description ?? '');
       sheetObject.appendRow(row);
       var cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColText, rowIndex: rowIdx));
       cell.cellStyle = disabledStyle;

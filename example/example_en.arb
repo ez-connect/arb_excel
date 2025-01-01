@@ -1,0 +1,75 @@
+{
+  "company": "FREEMIND",
+  "@company": {
+    "context": "common",
+    "description": "The company title"
+  },
+  "welcome": "Hi, {name}",
+  "@welcome": {
+    "context": "common",
+    "description": "Welcome",
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "dashboard": "Dashboard",
+  "@dashboard": {
+    "context": "common"
+  },
+  "analytics": "Analytics",
+  "@analytics": {
+    "context": "common"
+  },
+  "game": "Game",
+  "@game": {
+    "context": "common"
+  },
+  "support": "Support",
+  "@support": {
+    "context": "common"
+  },
+  "subscriptionSetting": "Subcription Setting",
+  "@subscriptionSetting": {
+    "context": "common"
+  },
+  "paymentHistory": "Payment History",
+  "@paymentHistory": {
+    "context": "common"
+  },
+  "language": "Language",
+  "@language": {
+    "context": "common"
+  },
+  "logout": "Log Out",
+  "@logout": {
+    "context": "common"
+  },
+  "profile": "Profile",
+  "@profile": {
+    "context": "common"
+  },
+  "firstName": "First name",
+  "@firstName": {
+    "context": "profile"
+  },
+  "lastName": "Last name",
+  "@lastName": {
+    "context": "profile"
+  },
+  "email": "Email",
+  "@email": {
+    "context": "profile"
+  },
+  "phoneNumber": "Phone number",
+  "@phoneNumber": {
+    "context": "profile"
+  },
+  "country": "Country",
+  "@country": {
+    "context": "profile"
+  },
+  "campaignList": "Campaigns",
+  "@campaignList": {
+    "context": "campaign"
+  }
+}
