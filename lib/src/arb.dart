@@ -29,7 +29,7 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale) {
         continue;
       }
       final item = items.putIfAbsent(e.key, () => ARBItem(text: e.key, translations: {}));
-      item.translations[locale] = e.value;
+      item.translations[locale] = e.value.toString();
       final meta = m['@${e.key}'];
       if (meta is Map) {
         final d = meta['description'];
@@ -132,35 +132,32 @@ class ARBItem {
     if (value == null || value.isEmpty) return null;
 
     final args = getArgs(value);
-    final hasMetadata = isDefault && (args.isNotEmpty || description != null);
+    final hasMetadata = isDefault && (args.isNotEmpty || description != null || context != null);
 
     final List<String> buf = [];
 
     if (hasMetadata) {
       buf.add('  "$text": "$value",');
       buf.add('  "@$text": {');
-
-      if (args.isEmpty) {
-        if (description != null) {
-          buf.add('    "description": "$description"');
-        }
-      } else {
-        if (description != null) {
-          buf.add('    "description": "$description",');
-        }
-        if (context != null) {
-          buf.add('    "context": "$context",');
-        }
-
-        buf.add('    "placeholders": {');
+      var meta = <String>[];
+      if (description != null) {
+        meta.add('    "description": "$description"');
+      }
+      if (context != null) {
+        meta.add('    "context": "$context"');
+      }
+      if (args.isNotEmpty) {
+        final sb = StringBuffer();
+        sb.writeln('    "placeholders": {');
         final List<String> group = [];
         for (final arg in args) {
           group.add('      "$arg": {"type": "String"}');
         }
-        buf.add(group.join(',\n'));
-        buf.add('    }');
+        sb.writeln(group.join(',\n'));
+        sb.write('    }');
+        meta.add(sb.toString());
       }
-
+      buf.add(meta.join(',\n'));
       buf.add('  }');
     } else {
       buf.add('  "$text": "$value"');
