@@ -1,30 +1,47 @@
-# This file configures the static analysis results for your project (errors,
-# warnings, and lints).
-#
-# This enables the 'recommended' set of lints from `package:lints`.
-# This set helps identify many issues that may lead to problems when running
-# or consuming Dart code, and enforces writing Dart using a single, idiomatic
-# style and format.
-#
-# If you want a smaller set of lints you can change this to specify
-# 'package:lints/core.yaml'. These are just the most critical lints
-# (the recommended set includes the core lints).
-# The core lints are also what is used by pub.dev for scoring packages.
-
 include: package:lints/recommended.yaml
 
-# Uncomment the following section to specify additional rules.
+analyzer:
+  language:
+    #  strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  exclude: [build/**]
 
-# linter:
-#   rules:
-#     - camel_case_types
-
-# analyzer:
-#   exclude:
-#     - path/to/excluded/files/**
-
-# For more information about the core and recommended set of lints, see
-# https://dart.dev/go/core-lints
-
-# For additional information about configuring this file, see
-# https://dart.dev/guides/language/analysis-options
+linter:
+  rules:
+    - camel_case_types
+    - implicit_call_tearoffs
+    - prefer_expression_function_bodies
+    - unnecessary_late
+    - unnecessary_lambdas
+    - type_annotate_public_apis
+    - always_declare_return_types
+    - avoid_unnecessary_containers
+    - avoid_void_async
+    - avoid_bool_literals_in_conditional_expressions
+    - no_literal_bool_comparisons
+    - noop_primitive_operations
+    - avoid_catching_errors
+    - unawaited_futures
+    - always_put_control_body_on_new_line
+    - always_use_package_imports
+    - annotate_redeclares
+    - avoid_double_and_int_checks
+    - avoid_empty_else
+    - avoid_slow_async_io
+    - avoid_escaping_inner_quotes
+    - only_throw_errors
+    - leading_newlines_in_multiline_strings
+    - avoid_type_to_string
+    - unnecessary_raw_strings
+    - avoid_types_as_parameter_names
+    - avoid_unused_constructor_parameters
+    - collection_methods_unrelated_type
+    - empty_statements
+    - file_names
+    - prefer_final_in_for_each
+    - prefer_inlined_adds
+    - prefer_iterable_whereType
+    - prefer_spread_collections
+    - flutter_style_todos
+    - avoid_single_cascade_in_expression_statements

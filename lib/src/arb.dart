@@ -20,7 +20,7 @@ String? determineLocale(String path) {
   return path.substring(idx+1);
 }
 
-void readArbItems(File f, Map<String, ARBItem> items, String locale) {
+void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter? filter}) {
   final s = f.readAsStringSync();
   final m = jsonDecode(s);
   if (m is Map) {
@@ -28,9 +28,12 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale) {
       if (e.key.startsWith('@')) {
         continue;
       }
+      final meta = m['@${e.key}'];
+      if (filter != null && !filter.accept(meta)) {
+        continue;
+      }
       final item = items.putIfAbsent(e.key, () => ARBItem(text: e.key, translations: {}));
       item.translations[locale] = e.value.toString();
-      final meta = m['@${e.key}'];
       if (meta is Map) {
         final d = meta['description'];
         if (d != null) {
@@ -49,7 +52,7 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale) {
 /// Parses .arb files to [Translation].
 /// The [filename] is the main language arb file or the name of the directory.
 ///
-(Translation translation, String? file) parseARB(String filename, {List<String>? targetLocales, String? leadLocale}) {
+(Translation translation, String? file) parseARB(String filename, {List<String>? targetLocales, String? leadLocale, ARBFilter? filter}) {
   var d = Directory(filename);
   var locales = <String>[];
   var arbItems = <String, ARBItem>{};
@@ -69,24 +72,40 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale) {
     if (locale == null) {
       continue;
     }
-    if (locale == leadLocale || (leadLocale == null && locales.isEmpty) || (targetLocales != null && targetLocales.contains(locale))) {
+    if (locale == leadLocale || (leadLocale == null && locales.isEmpty) || (targetLocales == null || targetLocales.contains(locale))) {
       file = f.path.substring(0, f.path.length - 4 - 1 - locale.length);
       locales.add(locale);
-      readArbItems(f, arbItems, locale);
+      readArbItems(f, arbItems, locale, filter: filter);
     }
   }
-  final t = Translation(languages: locales, items: arbItems.values.toList()..sort((a,b) => a.text.compareTo(b.text)));
+  final t = Translation(languages: locales, items: arbItems.values.toList());
   return (t, file);
 }
 
+Translation mergeARB(String filename, Translation data) {
+  Translation existing = parseARB(filename).$1;
+  var m = existing.itemsAsMap;
+  for (final item in data.items) {
+    var merged = m[item.text];
+    if (merged == null) {
+      existing.items.add(item);
+    } else {
+      merged.translations.addAll(item.translations);
+    }
+  }
+  return existing;
+}
+
 /// Writes [Translation] to .arb files.
-void writeARB(String filename, Translation data, bool includeLeadLocale) {
+void writeARB(String filename, Translation data, {required bool includeLeadLocale, bool merge = false}) {
+  if (merge) {
+    data = mergeARB(filename, data);
+  }
   for (var i = 0; i < data.languages.length; i++) {
     final lang = data.languages[i];
     final isDefault = includeLeadLocale && i == 0;
     final f = File('${withoutExtension(filename)}_$lang.arb');
-
-    var buf = [];
+    var buf = <String?>[];
     for (final item in data.items) {
       final data = item.toJSON(lang, isDefault);
       if (data != null) {
@@ -97,6 +116,26 @@ void writeARB(String filename, Translation data, bool includeLeadLocale) {
     buf = ['{', buf.join(',\n'), '}\n'];
     f.writeAsStringSync(buf.join('\n'));
   }
+}
+
+///
+/// Describes a filter allowing to filter ARB items to be exported to Excel.
+///
+class ARBFilter {
+  late final String property;
+  late final Object? value;
+
+  ARBFilter.parse(String filterDefinition) {
+    var idx = filterDefinition.indexOf(":");
+    if (idx < 0) {
+      throw Exception("Wrong ARB filter definition. Use syntax: propertyname:value");
+    }
+    property = filterDefinition.substring(0, idx);
+    var f = filterDefinition.substring(idx+1);
+    value = bool.tryParse(f) ?? f;
+  }
+
+  bool accept(Map<String, dynamic>? meta) => meta?[property] == value;
 }
 
 /// Describes an ARB record.
@@ -129,7 +168,9 @@ class ARBItem {
   /// Serialize in JSON.
   String? toJSON(String lang, [bool isDefault = false]) {
     final value = translations[lang];
-    if (value == null || value.isEmpty) return null;
+    if (value == null || value.isEmpty) {
+      return null;
+    }
 
     final args = getArgs(value);
     final hasMetadata = isDefault && (args.isNotEmpty || description != null || context != null);
@@ -173,4 +214,6 @@ class Translation {
 
   final List<String> languages;
   final List<ARBItem> items;
+
+  Map<String, ARBItem> get itemsAsMap => {for (final i in items) i.text: i};
 }

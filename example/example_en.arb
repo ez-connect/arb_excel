@@ -1,13 +1,13 @@
 {
   "company": "FREEMIND",
   "@company": {
-    "context": "common",
-    "description": "The company title"
+    "description": "The company title",
+    "context": "common"
   },
   "welcome": "Hi, {name}",
   "@welcome": {
-    "context": "common",
     "description": "Welcome",
+    "context": "common",
     "placeholders": {
       "name": {"type": "String"}
     }
