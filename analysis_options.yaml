@@ -45,3 +45,12 @@ linter:
     - prefer_spread_collections
     - flutter_style_todos
     - avoid_single_cascade_in_expression_statements
+    - avoid_catches_without_on_clauses
+    - avoid_classes_with_only_static_members
+    - avoid_dynamic_calls
+    - avoid_multiple_declarations_per_line
+    - avoid_positional_boolean_parameters
+    - avoid_redundant_argument_values
+    - cast_nullable_to_non_nullable
+    - combinators_ordering
+    - conditional_uri_does_not_exist

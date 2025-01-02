@@ -107,9 +107,9 @@ void writeARB(String filename, Translation data, {required bool includeLeadLocal
     final f = File('${withoutExtension(filename)}_$lang.arb');
     var buf = <String?>[];
     for (final item in data.items) {
-      final data = item.toJSON(lang, isDefault);
+      final data = item.toJSON(lang, isDefault: isDefault);
       if (data != null) {
-        buf.add(item.toJSON(lang, isDefault));
+        buf.add(item.toJSON(lang, isDefault: isDefault));
       }
     }
 
@@ -166,7 +166,7 @@ class ARBItem {
   final Map<String, String> translations;
 
   /// Serialize in JSON.
-  String? toJSON(String lang, [bool isDefault = false]) {
+  String? toJSON(String lang, {bool isDefault = false}) {
     final value = translations[lang];
     if (value == null || value.isEmpty) {
       return null;
