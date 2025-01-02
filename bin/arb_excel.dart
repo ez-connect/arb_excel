@@ -10,13 +10,13 @@ const _kVersion = '0.0.1';
 void main(List<String> args) {
   final parse = ArgParser();
   parse.addFlag('new',
-      abbr: 'n', defaultsTo: false, help: 'New translation sheet');
+      abbr: 'n', help: 'New translation sheet');
   parse.addFlag('arb',
-      abbr: 'a', defaultsTo: false, help: 'Export to ARB files');
+      abbr: 'a', help: 'Export to ARB files');
   parse.addFlag('excel',
-      abbr: 'e', defaultsTo: false, help: 'Import ARB files to sheet. Specify directory or name of main ARB file to import.');
+      abbr: 'e', help: 'Import ARB files to sheet. Specify directory or name of main ARB file to import.');
   parse.addFlag('merge',
-      abbr: 'm', defaultsTo: false, help: 'Merge data from excel file into ARB file. Specify name of Excel and ARB file to import.');
+      abbr: 'm', help: 'Merge data from excel file into ARB file. Specify name of Excel and ARB file to import.');
   parse.addOption('output',
       abbr: 'o', help: 'Name of output file to create');
   parse.addOption('leadLocale',
