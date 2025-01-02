@@ -19,6 +19,8 @@ OPTIONS
 -n, --new      New translation sheet
 -a, --arb      Export to ARB files
 -e, --excel    Import ARB files to sheet. Specify directory or name of main ARB file to import.
+-m, --merge    Merge data from excel file into ARB file. Specify name of Excel and ARB file to import.
+-f, --filter   Filter ARB resources to export depending on meta tag. Example: -f x-reviewed:false.
 -t, --targetLocales An optional comma separated list of locale names to be included in the Excel file created.
 -o, --output   Name of the output file to create. If not specified, the name is derived from the input file name.
 -l, --leadLocale The primary locale (aka lead or developer locale). When generating Excel files, it is assumed, this is the source locale.

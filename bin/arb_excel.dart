@@ -37,35 +37,35 @@ void main(List<String> args) {
 
   var filename = flags.rest.first;
   var inputFile = filename;
-  var outputFile = flags['output'];
-  if (flags['new']) {
+  var outputFile = flags.option('output');
+  if (flags['new'] == true) {
     stdout.writeln('Create new Excel file for translation: $filename');
     newTemplate(filename);
     exit(0);
   }
 
-  var merge = flags['merge'] == true;
-  if (flags['arb'] || merge) {
+  var merge = flags.flag('merge');
+  if (flags['arb'] == true || merge) {
     stdout.writeln('Generate ARB from: $filename');
-    var includeLeadLocale = flags['includeLeadLocale'] ?? false;
+    var includeLeadLocale = flags.flag('includeLeadLocale');
     var data = parseExcel(filename: filename, includeLeadLocale: includeLeadLocale);
     writeARB('${withoutExtension(filename)}.arb', data, includeLeadLocale: includeLeadLocale, merge: merge);
     exit(0);
   }
 
-  if (flags['excel']) {
-    var targetLocales = flags['targetLocales'];
+  if (flags.flag('excel')) {
+    var targetLocales = flags.option('targetLocales');
     var targetLocaleList = targetLocales?.split(",");
-    var leadLocale = flags['leadLocale'];
+    var leadLocale = flags.option('leadLocale');
     var filter = flags['filter'];
-    var data = parseARB(filename, targetLocales: targetLocaleList, leadLocale: leadLocale, filter: filter == null ? null : ARBFilter.parse(filter));
+    var data = parseARB(filename, targetLocales: targetLocaleList, leadLocale: leadLocale, filter: filter is! String ? null : ARBFilter.parse(filter));
     var d = Directory(filename);
     if (outputFile == null && d.existsSync() && data.$2 != null) {
       outputFile = '${data.$2}.xlsx';
     }
     outputFile ??= '${withoutExtension(inputFile)}.xlsx';
     stdout.writeln('Generate Excel file named $outputFile from: $inputFile');
-    leadLocale ??= data.$1.languages.firstOrNull;
+    leadLocale ??= data.$1.languages.firstOrNull ?? 'en';
     writeExcel(outputFile, data.$1, leadLocale);
     exit(0);
   }

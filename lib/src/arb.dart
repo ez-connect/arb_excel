@@ -23,24 +23,24 @@ String? determineLocale(String path) {
 void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter? filter}) {
   final s = f.readAsStringSync();
   final m = jsonDecode(s);
-  if (m is Map) {
+  if (m is Map<String, dynamic>) {
     for (final e in m.entries) {
       if (e.key.startsWith('@')) {
         continue;
       }
       final meta = m['@${e.key}'];
-      if (filter != null && !filter.accept(meta)) {
+      if (filter != null && meta is Map<String, dynamic>? && !filter.accept(meta)) {
         continue;
       }
       final item = items.putIfAbsent(e.key, () => ARBItem(text: e.key, translations: {}));
       item.translations[locale] = e.value.toString();
       if (meta is Map) {
         final d = meta['description'];
-        if (d != null) {
+        if (d is String) {
           item.description = d;
         }
         final c = meta['context'];
-        if (c != null) {
+        if (c is String) {
           item.context = c;
         }
       }
