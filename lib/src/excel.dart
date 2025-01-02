@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:arb_excel/src/assets.dart';
 import 'package:excel/excel.dart';
 
-import 'arb.dart';
+import 'package:arb_excel/src/arb.dart';
 
 const _kRowHeader = 0;
 const _kRowValue = 1;
@@ -86,7 +86,7 @@ void writeExcel(String filename, Translation data, String leadLocale) {
   var excel = Excel.createExcel();
   var sheets = excel.sheets;
   var defaultSheet = sheets.isNotEmpty ? sheets.keys.first : null;
-  for (var targetLocale in data.languages) {
+  for (final targetLocale in data.languages) {
     if (targetLocale == leadLocale) {
       continue;
     }
@@ -98,8 +98,6 @@ void writeExcel(String filename, Translation data, String leadLocale) {
     }
     var bgColorDoNotEdit = ExcelColor.fromHexString("#D6DCE4");
     var bgColorHeader = ExcelColor.fromHexString("#4472C4");
-    sheetObject.setColumnWidth(_kColContext, 20);
-    sheetObject.setColumnWidth(_kColText, 25);
     sheetObject.setColumnWidth(_kColValue, 60);
     sheetObject.setColumnWidth(_kColTargetLangValue, 60);
     sheetObject.setColumnWidth(_kColDescription, 90);
@@ -125,13 +123,17 @@ void writeExcel(String filename, Translation data, String leadLocale) {
     cell.cellStyle = boldStyle;
     var disabledStyle = CellStyle(backgroundColorHex: bgColorDoNotEdit);
     int rowIdx = _kRowValue;
-    for (var item in data.items) {
+    for (final item in data.items) {
+      var t = item.translations[targetLocale];
+      if (t == null) {
+        continue;
+      }
       var row = <CellValue?>[];
       row.length = 5;
       row[_kColContext] = TextCellValue(item.context ?? '');
       row[_kColText] = TextCellValue(item.text);
       row[_kColValue] = TextCellValue(_quote(item.translations[leadLocale]) ?? '?');
-      row[_kColTargetLangValue] = TextCellValue(_quote(item.translations[targetLocale]) ?? '');
+      row[_kColTargetLangValue] = TextCellValue(_quote(t) ?? '');
       row[_kColDescription] = TextCellValue(item.description ?? '');
       sheetObject.appendRow(row);
       var cell = sheetObject.cell(CellIndex.indexByColumnRow(columnIndex: _kColText, rowIndex: rowIdx));
@@ -144,6 +146,8 @@ void writeExcel(String filename, Translation data, String leadLocale) {
       cell.cellStyle = disabledStyle;
       rowIdx++;
     }
+    sheetObject.setColumnAutoFit(_kColText);
+    sheetObject.setColumnAutoFit(_kColContext);
   }
   var bytes = excel.save(fileName: filename);
   if (bytes == null) {

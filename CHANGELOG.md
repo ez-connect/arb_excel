@@ -25,3 +25,5 @@
 - Added command line option to define the *lead locale* used as the source locale in translation excels created.
 - Migrated to Flutter 3.27.x and newer versions of used Excel Plugin.
 - Added support for importing and exporting selected languages only (including and not including the lead locale resources).
+- Added option for filtering resources depending on meta tag (e.g. "x-reviewed": false) and option to merge existing
+  ARB file with translated contents from Excel.
