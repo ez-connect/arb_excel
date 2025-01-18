@@ -1,7 +1,5 @@
-import 'dart:convert';
 import 'dart:io';
 
-import 'package:arb_excel/src/assets.dart';
 import 'package:excel/excel.dart';
 
 import 'package:arb_excel/src/arb.dart';
@@ -13,14 +11,6 @@ const _kColText = 1;
 const _kColDescription = 2;
 const _kColValue = 3;
 const _kColTargetLangValue = 4;
-
-/// Create a new Excel template file.
-///
-/// Embedded data will be packed via `template.dart`.
-void newTemplate(String filename) {
-  final buf = base64Decode(kTemplate);
-  File(filename).writeAsBytesSync(buf);
-}
 
 /// Reads Excel sheet.
 ///
@@ -153,6 +143,5 @@ void writeExcel(String filename, Translation data, String leadLocale) {
   if (bytes == null) {
     throw Exception("Error generating excel. Cannot encode");
   }
-  stdout.writeln('Generating Excel file named $filename');
   File(filename).writeAsBytesSync(bytes);
 }

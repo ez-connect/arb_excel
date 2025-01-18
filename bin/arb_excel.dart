@@ -9,12 +9,10 @@ const _kVersion = '0.0.1';
 
 void main(List<String> args) {
   final parse = ArgParser();
-  parse.addFlag('new',
-      abbr: 'n', help: 'New translation sheet');
   parse.addFlag('arb',
       abbr: 'a', help: 'Export to ARB files');
   parse.addFlag('excel',
-      abbr: 'e', help: 'Import ARB files to sheet. Specify directory or name of main ARB file to import.');
+      abbr: 'e', help: 'Convert ARB files to Excel sheet. Specify director(ies) or name(s) of ARB files to convert as additional arguments.');
   parse.addFlag('merge',
       abbr: 'm', help: 'Merge data from excel file into ARB file. Specify name of Excel and ARB file to import.');
   parse.addOption('output',
@@ -36,35 +34,29 @@ void main(List<String> args) {
   }
 
   var filename = flags.rest.first;
-  var inputFile = filename;
   var outputFile = flags.option('output');
-  if (flags['new'] == true) {
-    stdout.writeln('Create new Excel file for translation: $filename');
-    newTemplate(filename);
-    exit(0);
-  }
 
   var merge = flags.flag('merge');
-  if (flags['arb'] == true || merge) {
+  if (flags.flag('arb') || merge) {
     stdout.writeln('Generate ARB from: $filename');
     var includeLeadLocale = flags.flag('includeLeadLocale');
     var data = parseExcel(filename: filename, includeLeadLocale: includeLeadLocale);
-    writeARB('${withoutExtension(filename)}.arb', data, includeLeadLocale: includeLeadLocale, merge: merge);
+    writeARB([outputFile ?? withoutExtension(filename)], data, includeLeadLocale: includeLeadLocale, merge: merge);
     exit(0);
   }
 
   if (flags.flag('excel')) {
+    if (outputFile == null) {
+      usage(parse);
+      exit(0);
+    }
     var targetLocales = flags.option('targetLocales');
     var targetLocaleList = targetLocales?.split(",");
     var leadLocale = flags.option('leadLocale');
     var filter = flags['filter'];
-    var data = parseARB(filename, targetLocales: targetLocaleList, leadLocale: leadLocale, filter: filter is! String ? null : ARBFilter.parse(filter));
-    var d = Directory(filename);
-    if (outputFile == null && d.existsSync() && data.$2 != null) {
-      outputFile = '${data.$2}.xlsx';
-    }
-    outputFile ??= '${withoutExtension(inputFile)}.xlsx';
-    stdout.writeln('Generate Excel file named $outputFile from: $inputFile');
+    var inputFiles = flags.rest;
+    var data = parseARB(inputFiles, targetLocales: targetLocaleList, leadLocale: leadLocale, filter: filter is! String ? null : ARBFilter.parse(filter));
+    stdout.writeln('Generating Excel file named $outputFile from: ${data.$2.join(', ')}');
     leadLocale ??= data.$1.languages.firstOrNull ?? 'en';
     writeExcel(outputFile, data.$1, leadLocale);
     exit(0);

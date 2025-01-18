@@ -27,3 +27,4 @@
 - Added support for importing and exporting selected languages only (including and not including the lead locale resources).
 - Added option for filtering resources depending on meta tag (e.g. "x-reviewed": false) and option to merge existing
   ARB file with translated contents from Excel.
+- Removed useless -n command line option.
