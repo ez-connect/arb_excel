@@ -13,17 +13,18 @@ pub global activate arb_excel
 ```bash
 pub global run arb_excel
 
-arb_sheet [OPTIONS] path_or_filename(s)
+USAGE:
+  arb_sheet [OPTIONS] path_or_filename[s]
 
 OPTIONS
--e, --excel    Import ARB files to sheet. Specify directory or name of main ARB file to import.
--a, --arb      Export to ARB files
--m, --merge    Merge data from excel file into ARB file. Specify name of Excel and ARB file to import.
--f, --filter   Filter ARB resources to export depending on meta tag. Example: -f x-reviewed:false.
--t, --targetLocales An optional comma separated list of locale names to be included in the Excel file created.
--o, --output   Name of the output file to create. If not specified, the name is derived from the input file name.
--l, --leadLocale The primary locale (aka lead or developer locale). When generating Excel files, it is assumed, this is the source locale.
--i, --includeLeadLocale Whether the ARB file for the lead locale should be extracted from the Excel as well.
+-o, --output                    Name of output file to create
+-a, --[no-]arb                  Convert Excel Sheet to ARB files
+-e, --[no-]excel                Convert ARB files to Excel Sheet. Specify director(ies) or name(s) of ARB files to convert as additional arguments.
+-m, --[no-]merge                Merge data from Excel Sheet into ARB file. Specify name of Excel Sheet and ARB file to import.
+-l, --leadLocale                Name of the primary (aka lead) locale.
+-t, --targetLocales             A comma separated list of locale names to be included in the Excel file created.
+-i, --[no-]includeLeadLocale    Whether the ARB file for the lead locale should be extracted from the Excel as well.
+-f, --filter                    Filter ARB resources to export depending on meta tag. Example: -f x-reviewed:false
 ```
 
 Examples:
