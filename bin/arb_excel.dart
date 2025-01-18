@@ -5,18 +5,18 @@ import 'package:path/path.dart';
 
 import 'package:arb_excel/arb_excel.dart';
 
-const _kVersion = '0.0.1';
+const _kVersion = '1.0.0';
 
 void main(List<String> args) {
   final parse = ArgParser();
-  parse.addFlag('arb',
-      abbr: 'a', help: 'Export to ARB files');
-  parse.addFlag('excel',
-      abbr: 'e', help: 'Convert ARB files to Excel sheet. Specify director(ies) or name(s) of ARB files to convert as additional arguments.');
-  parse.addFlag('merge',
-      abbr: 'm', help: 'Merge data from excel file into ARB file. Specify name of Excel and ARB file to import.');
   parse.addOption('output',
       abbr: 'o', help: 'Name of output file to create');
+  parse.addFlag('arb',
+      abbr: 'a', help: 'Convert Excel Sheet to ARB files');
+  parse.addFlag('excel',
+      abbr: 'e', help: 'Convert ARB files to Excel Sheet. Specify director(ies) or name(s) of ARB files to convert as additional arguments.');
+  parse.addFlag('merge',
+      abbr: 'm', help: 'Merge data from Excel Sheet into ARB file. Specify name of Excel Sheet and ARB file to import.');
   parse.addOption('leadLocale',
       abbr: 'l', help: 'Name of the primary (aka lead) locale.');
   parse.addOption('targetLocales',
@@ -25,12 +25,16 @@ void main(List<String> args) {
       abbr: 'i', help: 'Whether the ARB file for the lead locale should be extracted from the Excel as well.');
   parse.addOption('filter',
       abbr: 'f', help: 'Filter ARB resources to export depending on meta tag. Example: -f x-reviewed:false');
-  final flags = parse.parse(args);
 
-  // Not enough args
-  if (args.length < 2) {
+  ArgResults flags;
+  try {
+    flags = parse.parse(args);
+    // Not enough args
+    if (args.length < 2) {
+      usage(parse);
+    }
+  } on FormatException {
     usage(parse);
-    exit(1);
   }
 
   var filename = flags.rest.first;
@@ -48,7 +52,6 @@ void main(List<String> args) {
   if (flags.flag('excel')) {
     if (outputFile == null) {
       usage(parse);
-      exit(0);
     }
     var targetLocales = flags.option('targetLocales');
     var targetLocaleList = targetLocales?.split(",");
@@ -63,12 +66,13 @@ void main(List<String> args) {
   }
 }
 
-void usage(ArgParser parse) {
+Never usage(ArgParser parse) {
   stdout.writeln('arb_sheet v$_kVersion\n');
   stdout.writeln('USAGE:');
   stdout.writeln(
-    '  arb_sheet [OPTIONS] path/to/file/name\n',
+    '  arb_sheet [OPTIONS] path_or_filename[s]\n',
   );
   stdout.writeln('OPTIONS');
   stdout.writeln(parse.usage);
+  exit(1);
 }
