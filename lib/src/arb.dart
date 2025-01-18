@@ -52,38 +52,41 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
 /// Parses .arb files to [Translation].
 /// The [filename] is the main language arb file or the name of the directory.
 ///
-(Translation translation, String? file) parseARB(String filename, {List<String>? targetLocales, String? leadLocale, ARBFilter? filter}) {
-  var d = Directory(filename);
-  var locales = <String>[];
+(Translation translation, List<String> files) parseARB(List<String> filenames, {List<String>? targetLocales, String? leadLocale, ARBFilter? filter}) {
   var arbItems = <String, ARBItem>{};
-  if (!d.existsSync()) {
-    d = File(filename).parent;
+  var locales = <String>[];
+  List<String> files = [];
+  for (final filename in filenames) {
+    var d = Directory(filename);
     if (!d.existsSync()) {
-      throw Exception("Directory $d cannot be found");
+      d = File(filename).parent;
+      if (!d.existsSync()) {
+        throw Exception("Directory $d cannot be found");
+      }
     }
-  }
-  String? file;
-  for (final f in d.listSync()) {
-    final p = basename(f.path);
-    if (f is! File || !p.endsWith(".arb")) {
-      continue;
-    }
-    final locale = determineLocale(p);
-    if (locale == null) {
-      continue;
-    }
-    if (locale == leadLocale || (leadLocale == null && locales.isEmpty) || (targetLocales == null || targetLocales.contains(locale))) {
-      file = f.path.substring(0, f.path.length - 4 - 1 - locale.length);
-      locales.add(locale);
-      readArbItems(f, arbItems, locale, filter: filter);
+    for (final f in d.listSync()) {
+      final p = basename(f.path);
+      if (f is! File || !p.endsWith(".arb")) {
+        continue;
+      }
+      final locale = determineLocale(p);
+      if (locale == null) {
+        continue;
+      }
+      if (locale == leadLocale || (leadLocale == null && locales.isEmpty) ||
+          (targetLocales == null || targetLocales.contains(locale))) {
+        files.add(f.path);
+        locales.add(locale);
+        readArbItems(f, arbItems, locale, filter: filter);
+      }
     }
   }
   final t = Translation(languages: locales, items: arbItems.values.toList());
-  return (t, file);
+  return (t, files);
 }
 
-Translation mergeARB(String filename, Translation data) {
-  Translation existing = parseARB(filename).$1;
+Translation mergeARB(List<String> filenames, Translation data) {
+  Translation existing = parseARB(filenames).$1;
   var m = existing.itemsAsMap;
   for (final item in data.items) {
     var merged = m[item.text];
@@ -97,14 +100,15 @@ Translation mergeARB(String filename, Translation data) {
 }
 
 /// Writes [Translation] to .arb files.
-void writeARB(String filename, Translation data, {required bool includeLeadLocale, bool merge = false}) {
+void writeARB(List<String> filenames, Translation data, {required bool includeLeadLocale, bool merge = false}) {
   if (merge) {
-    data = mergeARB(filename, data);
+    data = mergeARB(filenames, data);
   }
+  var basename = withoutExtension(filenames.first);
   for (var i = 0; i < data.languages.length; i++) {
     final lang = data.languages[i];
     final isDefault = includeLeadLocale && i == 0;
-    final f = File('${withoutExtension(filename)}_$lang.arb');
+    final f = File('${basename}_$lang.arb');
     var buf = <String?>[];
     for (final item in data.items) {
       final data = item.toJSON(lang, isDefault: isDefault);
