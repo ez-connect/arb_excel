@@ -100,7 +100,7 @@ Translation mergeARB(List<String> filenames, Translation data) {
 }
 
 /// Writes [Translation] to .arb files.
-void writeARB(List<String> filenames, Translation data, {required bool includeLeadLocale, bool merge = false}) {
+void writeARB(String inputFilename, List<String> filenames, Translation data, {required bool includeLeadLocale, bool merge = false}) {
   if (merge) {
     data = mergeARB(filenames, data);
   }
@@ -118,6 +118,11 @@ void writeARB(List<String> filenames, Translation data, {required bool includeLe
     }
 
     buf = ['{', buf.join(',\n'), '}\n'];
+    if (merge) {
+      stdout.writeln('Merging ARB file ${f.path} with input from: $inputFilename');
+    } else {
+      stdout.writeln('Generating ARB file ${f.path} from: $inputFilename');
+    }
     f.writeAsStringSync(buf.join('\n'));
   }
 }

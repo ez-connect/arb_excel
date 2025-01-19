@@ -42,10 +42,9 @@ void main(List<String> args) {
 
   var merge = flags.flag('merge');
   if (flags.flag('arb') || merge) {
-    stdout.writeln('Generate ARB from: $filename');
     var includeLeadLocale = flags.flag('includeLeadLocale');
     var data = parseExcel(filename: filename, includeLeadLocale: includeLeadLocale);
-    writeARB([outputFile ?? withoutExtension(filename)], data, includeLeadLocale: includeLeadLocale, merge: merge);
+    writeARB(filename, [outputFile ?? withoutExtension(filename)], data, includeLeadLocale: includeLeadLocale, merge: merge);
     exit(0);
   }
 
