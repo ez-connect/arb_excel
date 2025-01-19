@@ -29,7 +29,7 @@ OPTIONS
 
 Examples:
 
-Generates ARB files from a XLSX file.
+Generates ARB files from an XLSX file.
 
 Creates an Excel file (`-e`) named `example/example.xlsx` (`-o ...`) from ARB files from directory `example`,
 lead locale is `en` (`-l en`).
@@ -38,10 +38,16 @@ lead locale is `en` (`-l en`).
 dart pub global run arb_excel -l en -e -o example/example.xlsx example
 ```
 
-Merge (`-m`) the contents of file `exmample/example.xlsx` back into the ARB files located in directory example.
+Merge (`-m`) the contents of file `exmample/example.xlsx` back into the ARB files located in directory `example`.
 Lead locale is `en` (`-l en`). Also extract the entries from the lead locale (`-i`).
 
 ```bash
 dart pub global run arb_excel -l en -i -m example/example.xlsx
+```
+
+Create an ARB file (`-a`) named `test_vi.arb` (`-o test.arb`) from the contents of file `exmample/example.xlsx`.
+
+```bash
+dart pub global run arb_excel -a example/example.xlsx -o test.arb
 ```
 
