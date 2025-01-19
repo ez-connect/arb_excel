@@ -23,6 +23,7 @@ String? determineLocale(String path) {
 void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter? filter}) {
   final s = f.readAsStringSync();
   final m = jsonDecode(s);
+  var filename = withoutExtension(basename(f.path));
   if (m is Map<String, dynamic>) {
     for (final e in m.entries) {
       if (e.key.startsWith('@')) {
@@ -32,7 +33,7 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
       if (filter != null && meta is Map<String, dynamic>? && !filter.accept(meta)) {
         continue;
       }
-      final item = items.putIfAbsent(e.key, () => ARBItem(text: e.key, translations: {}));
+      final item = items.putIfAbsent(e.key, () => ARBItem(messageKey: e.key, filename: filename, translations: {}));
       item.translations[locale] = e.value.toString();
       if (meta is Map) {
         final d = meta['description'];
@@ -89,7 +90,7 @@ Translation mergeARB(List<String> filenames, Translation data) {
   Translation existing = parseARB(filenames).$1;
   var m = existing.itemsAsMap;
   for (final item in data.items) {
-    var merged = m[item.text];
+    var merged = m[item.messageKey];
     if (merged == null) {
       existing.items.add(item);
     } else {
@@ -164,12 +165,17 @@ class ARBItem {
 
   ARBItem({
     this.context,
-    required this.text,
+    this.filename,
+    required this.messageKey,
     this.description,
     this.translations = const {},
   });
 
-  final String text;
+  final String messageKey;
+  ///
+  /// The base file name of the file, where this message is defined (e.g. test.arb rather than test_de.arb).
+  ///
+  final String? filename;
   String? context;
   String? description;
   final Map<String, String> translations;
@@ -187,8 +193,8 @@ class ARBItem {
     final List<String> buf = [];
 
     if (hasMetadata) {
-      buf.add('  "$text": "$value",');
-      buf.add('  "@$text": {');
+      buf.add('  "$messageKey": "$value",');
+      buf.add('  "@$messageKey": {');
       var meta = <String>[];
       if (description != null) {
         meta.add('    "description": "$description"');
@@ -210,7 +216,7 @@ class ARBItem {
       buf.add(meta.join(',\n'));
       buf.add('  }');
     } else {
-      buf.add('  "$text": "$value"');
+      buf.add('  "$messageKey": "$value"');
     }
 
     return buf.join('\n');
@@ -224,5 +230,5 @@ class Translation {
   final List<String> languages;
   final List<ARBItem> items;
 
-  Map<String, ARBItem> get itemsAsMap => {for (final i in items) i.text: i};
+  Map<String, ARBItem> get itemsAsMap => {for (final i in items) i.messageKey: i};
 }
