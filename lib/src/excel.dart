@@ -44,7 +44,7 @@ Translation parseExcel({
         var text = row[_kColText]?.value?.toString() ?? '';
 
         final item = items.putIfAbsent(text, () => ARBItem(
-          text: text,
+          messageKey: text,
           context: row[_kColContext]?.value?.toString(),
           description: row[_kColDescription]?.value?.toString(),
           translations: {},
@@ -59,7 +59,7 @@ Translation parseExcel({
       var text = row[_kColText]?.value?.toString() ?? '';
 
       final item = items.putIfAbsent(text, () => ARBItem(
-        text: text,
+        messageKey: text,
         translations: {},
       ));
       item.translations[locale] = row[_kColTargetLangValue]?.value?.toString() ?? '';
@@ -121,7 +121,7 @@ void writeExcel(String filename, Translation data, String leadLocale) {
       var row = <CellValue?>[];
       row.length = 5;
       row[_kColContext] = TextCellValue(item.context ?? '');
-      row[_kColText] = TextCellValue(item.text);
+      row[_kColText] = TextCellValue(item.messageKey);
       row[_kColValue] = TextCellValue(_quote(item.translations[leadLocale]) ?? '?');
       row[_kColTargetLangValue] = TextCellValue(_quote(t) ?? '');
       row[_kColDescription] = TextCellValue(item.description ?? '');
