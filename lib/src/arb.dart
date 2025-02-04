@@ -6,6 +6,15 @@ import 'package:path/path.dart';
 /// To match all args from a text.
 final _kRegArgs = RegExp(r'{(\w+)}');
 
+String baseFilename(String path) {
+  var p = withoutExtension(path);
+  var idx = p.lastIndexOf("_");
+  if (idx < 0) {
+    return p;
+  }
+  return p.substring(0, idx);
+}
+
 String? determineLocale(String path) {
   var idx = path.lastIndexOf(".");
   path = path.substring(0, idx);
@@ -88,6 +97,7 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
 
 Translation mergeARB(List<String> filenames, Translation data) {
   Translation existing = parseARB(filenames).$1;
+  existing.quoteMessages();
   var m = existing.itemsAsMap;
   for (final item in data.items) {
     var merged = m[item.messageKey];
@@ -102,15 +112,21 @@ Translation mergeARB(List<String> filenames, Translation data) {
 
 /// Writes [Translation] to .arb files.
 void writeARB(String inputFilename, List<String> filenames, Translation data, {required bool includeLeadLocale, bool merge = false}) {
+  var basename = withoutExtension(filenames.first);
   if (merge) {
     data = mergeARB(filenames, data);
   }
-  var basename = withoutExtension(filenames.first);
+  var fn = data.items.first.filename;
+  if (fn != null && filenames.length == 1 && FileSystemEntity.isDirectorySync(filenames.first)) {
+    basename = join(filenames.first, withoutExtension(fn));
+  }
+  basename = baseFilename(basename);
   for (var i = 0; i < data.languages.length; i++) {
     final lang = data.languages[i];
     final isDefault = includeLeadLocale && i == 0;
     final f = File('${basename}_$lang.arb');
     var buf = <String?>[];
+    buf.add('  "@@locale": "$lang"');
     for (final item in data.items) {
       final data = item.toJSON(lang, isDefault: isDefault);
       if (data != null) {
@@ -231,4 +247,17 @@ class Translation {
   final List<ARBItem> items;
 
   Map<String, ARBItem> get itemsAsMap => {for (final i in items) i.messageKey: i};
+
+  String _quote(String s) => s.replaceAll("\n", "\\n");
+
+  void quoteMessages() {
+    for (final a in items) {
+      for (final l in languages) {
+        var m = a.translations[l];
+        if (m != null) {
+          a.translations[l] = _quote(m);
+        }
+      }
+    }
+  }
 }
