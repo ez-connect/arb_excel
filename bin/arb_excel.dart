@@ -23,8 +23,8 @@ void main(List<String> args) {
       abbr: 't', help: 'A comma separated list of locale names to be included in the Excel file created.');
   parse.addFlag('includeLeadLocale',
       abbr: 'i', help: 'Whether the ARB file for the lead locale should be extracted from the Excel as well.');
-  parse.addOption('marker',
-      abbr: 'm', help: 'Filter ARB resources to export depending on a review marker. Example: -m x-reviewed:false. Maybe also used with merge option to update the review markers in merged ARB files.');
+  parse.addOption('review-marker',
+      abbr: 'r', help: 'Filter ARB resources to export depending on a review marker. Example: -r x-reviewed:false. Maybe also used with merge option to update the review markers in merged ARB files.');
 
   ArgResults flags;
   try {
@@ -40,7 +40,7 @@ void main(List<String> args) {
   var filename = flags.rest.first;
   var outputFile = flags.option('output');
   var leadLocale = flags.option('leadLocale');
-  var reviewMarkerSpec = flags['marker'];
+  var reviewMarkerSpec = flags['review-marker'];
   var filter = reviewMarkerSpec is! String ? null : ARBFilter.parse(reviewMarkerSpec);
 
   var merge = flags.flag('merge');
