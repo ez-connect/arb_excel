@@ -39,12 +39,16 @@ void main(List<String> args) {
 
   var filename = flags.rest.first;
   var outputFile = flags.option('output');
+  var leadLocale = flags.option('leadLocale');
+  var filterSpec = flags['filter'];
+  var filter = filterSpec is! String ? null : ARBFilter.parse(filterSpec);
 
   var merge = flags.flag('merge');
   if (flags.flag('arb') || merge) {
     var includeLeadLocale = flags.flag('includeLeadLocale');
     var data = parseExcel(filename: filename, includeLeadLocale: includeLeadLocale);
-    writeARB(filename, [outputFile ?? withoutExtension(filename)], data, includeLeadLocale: includeLeadLocale, merge: merge);
+    writeARB(filename, [outputFile ?? withoutExtension(filename)], data, includeLeadLocale: includeLeadLocale,
+        merge: merge, leadLocale: leadLocale, filter: filter);
     exit(0);
   }
 
@@ -54,10 +58,8 @@ void main(List<String> args) {
     }
     var targetLocales = flags.option('targetLocales');
     var targetLocaleList = targetLocales?.split(",");
-    var leadLocale = flags.option('leadLocale');
-    var filter = flags['filter'];
     var inputFiles = flags.rest;
-    var data = parseARB(inputFiles, targetLocales: targetLocaleList, leadLocale: leadLocale, filter: filter is! String ? null : ARBFilter.parse(filter));
+    var data = parseARB(inputFiles, targetLocales: targetLocaleList, leadLocale: leadLocale, filter: filter);
     stdout.writeln('Generating Excel file named $outputFile from: ${data.$2.join(', ')}');
     leadLocale ??= data.$1.languages.firstOrNull ?? 'en';
     writeExcel(outputFile, data.$1, leadLocale);
