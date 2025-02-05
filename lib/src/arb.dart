@@ -53,6 +53,10 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
         if (c is String) {
           item.context = c;
         }
+        var reviewed = meta[filter?.property];
+        if (reviewed is bool) {
+          item.reviewedMarker[locale] = reviewed;
+        }
       }
     }
   }
@@ -95,26 +99,31 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
   return (t, files);
 }
 
-Translation mergeARB(List<String> filenames, Translation data) {
-  Translation existing = parseARB(filenames).$1;
-  existing.quoteMessages();
-  var m = existing.itemsAsMap;
-  for (final item in data.items) {
-    var merged = m[item.messageKey];
+///
+/// Read the existing translations from the ARB files defined by [filenames]
+/// and merge the data from an excel input into the ARB files.
+///
+Translation mergeARB(List<String> filenames, Translation excelInputData, { ARBFilter? filter}) {
+  Translation arbFileItems = parseARB(filenames, filter: filter).$1;
+  arbFileItems.quoteMessages();
+  var existingArbItems = arbFileItems.itemsAsMap;
+  for (final item in excelInputData.items) {
+    var merged = existingArbItems[item.messageKey];
     if (merged == null) {
-      existing.items.add(item);
+      arbFileItems.items.add(item);
     } else {
-      merged.translations.addAll(item.translations);
+      merged.importTranslations(item.translations);
     }
   }
-  return existing;
+  return arbFileItems;
 }
 
 /// Writes [Translation] to .arb files.
-void writeARB(String inputFilename, List<String> filenames, Translation data, {required bool includeLeadLocale, bool merge = false}) {
+void writeARB(String inputFilename, List<String> filenames, Translation data,
+    {required bool includeLeadLocale, bool merge = false, String? leadLocale, ARBFilter? filter}) {
   var basename = withoutExtension(filenames.first);
   if (merge) {
-    data = mergeARB(filenames, data);
+    data = mergeARB(filenames, data, filter: filter);
   }
   var fn = data.items.first.filename;
   if (fn != null && filenames.length == 1 && FileSystemEntity.isDirectorySync(filenames.first)) {
@@ -123,24 +132,24 @@ void writeARB(String inputFilename, List<String> filenames, Translation data, {r
   basename = baseFilename(basename);
   for (var i = 0; i < data.languages.length; i++) {
     final lang = data.languages[i];
-    final isDefault = includeLeadLocale && i == 0;
+    final isDefault = includeLeadLocale && ((leadLocale != null && lang == leadLocale) || (leadLocale == null && i == 0));
     final f = File('${basename}_$lang.arb');
     var buf = <String?>[];
     buf.add('  "@@locale": "$lang"');
     for (final item in data.items) {
-      final data = item.toJSON(lang, isDefault: isDefault);
+      final data = item.toJSON(lang, isDefault: isDefault, reviewedProperty: filter?.property);
       if (data != null) {
-        buf.add(item.toJSON(lang, isDefault: isDefault));
+        buf.add(data);
       }
     }
-
-    buf = ['{', buf.join(',\n'), '}\n'];
+    final nl = Platform.lineTerminator;
+    buf = ['{', buf.join(',$nl'), '}$nl'];
     if (merge) {
       stdout.writeln('Merging ARB file ${f.path} with input from: $inputFilename');
     } else {
       stdout.writeln('Generating ARB file ${f.path} from: $inputFilename');
     }
-    f.writeAsStringSync(buf.join('\n'));
+    f.writeAsStringSync(buf.join(nl));
   }
 }
 
@@ -194,19 +203,25 @@ class ARBItem {
   final String? filename;
   String? context;
   String? description;
+  ///
+  /// Whether the entry for a locale was marked for review.
+  ///
+  final Map<String,bool> reviewedMarker = {};
   final Map<String, String> translations;
 
   /// Serialize in JSON.
-  String? toJSON(String lang, {bool isDefault = false}) {
+  String? toJSON(String lang, {bool isDefault = false, String? reviewedProperty = "x-reviewed"}) {
     final value = translations[lang];
     if (value == null || value.isEmpty) {
       return null;
     }
 
     final args = getArgs(value);
-    final hasMetadata = isDefault && (args.isNotEmpty || description != null || context != null);
+    final needsReview = reviewedMarker[lang] == false;
+    final hasMetadata = needsReview || (isDefault && (args.isNotEmpty || description != null || context != null));
 
     final List<String> buf = [];
+    final nl = Platform.lineTerminator;
 
     if (hasMetadata) {
       buf.add('  "$messageKey": "$value",');
@@ -218,6 +233,9 @@ class ARBItem {
       if (context != null) {
         meta.add('    "context": "$context"');
       }
+      if (needsReview) {
+        meta.add('    "$reviewedProperty": false');
+      }
       if (args.isNotEmpty) {
         final sb = StringBuffer();
         sb.writeln('    "placeholders": {');
@@ -225,17 +243,30 @@ class ARBItem {
         for (final arg in args) {
           group.add('      "$arg": {"type": "String"}');
         }
-        sb.writeln(group.join(',\n'));
+        sb.writeln(group.join(',$nl'));
         sb.write('    }');
         meta.add(sb.toString());
       }
-      buf.add(meta.join(',\n'));
+      buf.add(meta.join(',$nl'));
       buf.add('  }');
     } else {
       buf.add('  "$messageKey": "$value"');
     }
 
     return buf.join('\n');
+  }
+
+  ///
+  /// Import the translations from an external source.
+  ///
+  void importTranslations(Map<String, String> imported) {
+    for (final localeEntry in imported.entries) {
+      final existing = translations[localeEntry.key];
+      if (existing == null || existing != localeEntry.value) {
+        reviewedMarker[localeEntry.key] = true;
+        translations[localeEntry.key] = localeEntry.value;
+      }
+    }
   }
 }
 
