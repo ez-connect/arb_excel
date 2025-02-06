@@ -29,7 +29,7 @@ String? determineLocale(String path) {
   return path.substring(idx+1);
 }
 
-void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter? filter}) {
+void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter? filter, String? reviewMarkerProperty}) {
   final s = f.readAsStringSync();
   final m = jsonDecode(s);
   var filename = withoutExtension(basename(f.path));
@@ -53,7 +53,19 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
         if (c is String) {
           item.context = c;
         }
-        var reviewed = meta[filter?.property];
+        final placeholders = meta['placeholders'];
+        if (placeholders is Map) {
+          for (final placeholder in placeholders.entries) {
+            var value = placeholder.value;
+            if (value is Map) {
+              var d = value["description"];
+              if (d is String) {
+                item.placeHolderDescriptions[placeholder.key.toString()] = d;
+              }
+            }
+          }
+        }
+        var reviewed = meta[reviewMarkerProperty];
         if (reviewed is bool) {
           item.reviewedMarker[locale] = reviewed;
         }
@@ -66,7 +78,8 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
 /// Parses .arb files to [Translation].
 /// The [filename] is the main language arb file or the name of the directory.
 ///
-(Translation translation, List<String> files) parseARB(List<String> filenames, {List<String>? targetLocales, String? leadLocale, ARBFilter? filter}) {
+(Translation translation, List<String> files) parseARB(List<String> filenames, {List<String>? targetLocales,
+  String? leadLocale, ARBFilter? filter, String? reviewMarkerProperty}) {
   var arbItems = <String, ARBItem>{};
   var locales = <String>[];
   List<String> files = [];
@@ -91,7 +104,7 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
           (targetLocales == null || targetLocales.contains(locale))) {
         files.add(f.path);
         locales.add(locale);
-        readArbItems(f, arbItems, locale, filter: filter);
+        readArbItems(f, arbItems, locale, filter: filter, reviewMarkerProperty: reviewMarkerProperty);
       }
     }
   }
@@ -104,7 +117,7 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
 /// and merge the data from an excel input into the ARB files.
 ///
 Translation mergeARB(List<String> filenames, Translation excelInputData, { ARBFilter? filter}) {
-  Translation arbFileItems = parseARB(filenames, filter: filter).$1;
+  Translation arbFileItems = parseARB(filenames, reviewMarkerProperty: filter?.property).$1;
   arbFileItems.quoteMessages();
   var existingArbItems = arbFileItems.itemsAsMap;
   for (final item in excelInputData.items) {
@@ -173,21 +186,10 @@ class ARBFilter {
   bool accept(Map<String, dynamic>? meta) => meta?[property] == value;
 }
 
-/// Describes an ARB record.
+///
+/// Describes an ARB record holding the translations and meta information for one message key.
+///
 class ARBItem {
-  static List<String> getArgs(String text) {
-    final List<String> args = [];
-    final matches = _kRegArgs.allMatches(text);
-    for (final m in matches) {
-      final arg = m.group(1);
-      if (arg != null) {
-        args.add(arg);
-      }
-    }
-
-    return args;
-  }
-
   ARBItem({
     this.context,
     this.filename,
@@ -196,11 +198,27 @@ class ARBItem {
     this.translations = const {},
   });
 
+  Map<String,String> getPlaceholders(String text) {
+    final matches = _kRegArgs.allMatches(text);
+    for (final m in matches) {
+      final arg = m.group(1);
+      if (arg != null && placeHolderDescriptions[arg] == null) {
+        placeHolderDescriptions[arg] = "@@ TODO $arg";
+      }
+    }
+    return placeHolderDescriptions;
+  }
+
+  ///
+  /// The message key used in the translation process to refer to the message.
+  ///
   final String messageKey;
   ///
   /// The base file name of the file, where this message is defined (e.g. test.arb rather than test_de.arb).
   ///
   final String? filename;
+  ///
+  /// An optional context
   String? context;
   String? description;
   ///
@@ -208,6 +226,7 @@ class ARBItem {
   ///
   final Map<String,bool> reviewedMarker = {};
   final Map<String, String> translations;
+  final Map<String, String> placeHolderDescriptions = {};
 
   /// Serialize in JSON.
   String? toJSON(String lang, {bool isDefault = false, String? reviewedProperty = "x-reviewed"}) {
@@ -216,9 +235,9 @@ class ARBItem {
       return null;
     }
 
-    final args = getArgs(value);
+    final placeHolders = getPlaceholders(value);
     final needsReview = reviewedMarker[lang] == false;
-    final hasMetadata = needsReview || (isDefault && (args.isNotEmpty || description != null || context != null));
+    final hasMetadata = needsReview || (isDefault && (placeHolders.isNotEmpty || description != null || context != null));
 
     final List<String> buf = [];
     final nl = Platform.lineTerminator;
@@ -227,21 +246,21 @@ class ARBItem {
       buf.add('  "$messageKey": "$value",');
       buf.add('  "@$messageKey": {');
       var meta = <String>[];
-      if (description != null) {
+      if (description != null && isDefault) {
         meta.add('    "description": "$description"');
       }
-      if (context != null) {
+      if (context != null && isDefault) {
         meta.add('    "context": "$context"');
       }
       if (needsReview) {
         meta.add('    "$reviewedProperty": false');
       }
-      if (args.isNotEmpty) {
+      if (placeHolders.isNotEmpty && isDefault) {
         final sb = StringBuffer();
         sb.writeln('    "placeholders": {');
         final List<String> group = [];
-        for (final arg in args) {
-          group.add('      "$arg": {"type": "String"}');
+        for (final placeholder in placeHolders.entries) {
+          group.add('      "${placeholder.key}": {"description": "${placeholder.value}"}');
         }
         sb.writeln(group.join(',$nl'));
         sb.write('    }');
@@ -253,7 +272,7 @@ class ARBItem {
       buf.add('  "$messageKey": "$value"');
     }
 
-    return buf.join('\n');
+    return buf.join(nl);
   }
 
   ///
