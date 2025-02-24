@@ -28,7 +28,7 @@ USAGE:
 | -t, --targetLocales          | A comma separated list of locale names to be included in the Excel file created.                                                                                                 |
 | -i, --[no-]includeLeadLocale | Whether the ARB file for the lead locale should be extracted from the Excel as well.                                                                                             |
 | -r, --review-marker          | Filter ARB resources to export depending on a review marker. Example: `-m x-reviewed:false`. Maybe also used with merge option to update the review markers in merged ARB files. |
-
+| --singleSheet                | Whether all languages are exported to a single Excel sheet.                                                                                                                      |
 #### Examples
 
 Generates ARB files from an XLSX file.

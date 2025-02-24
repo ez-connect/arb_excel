@@ -1,6 +1,6 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="merge-from-excel" type="DartCommandLineRunConfigurationType" factoryName="Dart Command Line Application">
-    <option name="arguments" value="-l en -i -m example/example.xlsx" />
+    <option name="arguments" value="-l en -i -m -r x-reviewed:true c:\temp\managed_checkout.xlsx -o c:\source\rp-flutter-apps\rp-library-flutter-managed-checkout\lib\src\l10n" />
     <option name="filePath" value="$PROJECT_DIR$/bin/arb_excel.dart" />
     <option name="workingDirectory" value="$PROJECT_DIR$" />
     <method v="2" />

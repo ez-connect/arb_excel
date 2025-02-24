@@ -19,6 +19,8 @@ void main(List<String> args) {
       abbr: 'm', help: 'Merge data from Excel Sheet into ARB file. Specify name of Excel Sheet and ARB file to import.');
   parse.addOption('leadLocale',
       abbr: 'l', help: 'Name of the primary (aka lead) locale.');
+  parse.addFlag('singleSheet',
+      help: 'Whether all messages for all languages should be exported to a single Excel sheet.');
   parse.addOption('targetLocales',
       abbr: 't', help: 'A comma separated list of locale names to be included in the Excel file created.');
   parse.addFlag('includeLeadLocale',
@@ -62,7 +64,7 @@ void main(List<String> args) {
     var data = parseARB(inputFiles, targetLocales: targetLocaleList, leadLocale: leadLocale, filter: filter);
     stdout.writeln('Generating Excel file named $outputFile from: ${data.$2.join(', ')}');
     leadLocale ??= data.$1.languages.firstOrNull ?? 'en';
-    writeExcel(outputFile, data.$1, leadLocale);
+    writeExcel(outputFile, data: data.$1, leadLocale: leadLocale, singleSheet: flags.flag("singleSheet"));
     exit(0);
   }
 }
