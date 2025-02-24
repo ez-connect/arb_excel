@@ -28,3 +28,4 @@
 - Added option for filtering resources depending on review markers (e.g. "x-reviewed": false) and option to merge existing
   ARB file with translated contents from Excel.
 - Removed useless -n command line option.
+- Added flag to place all messages for all languages in generated Excel on one sheet.
