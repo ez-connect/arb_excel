@@ -187,7 +187,8 @@ void writeExcel(String filename,
   File(filename).writeAsBytesSync(bytes);
 }
 
-void makeHeaderCellsBold(Sheet sheetObject, List<TextCellValue> headerCells, CellStyle boldStyle) {
+void makeHeaderCellsBold(
+    Sheet sheetObject, List<TextCellValue> headerCells, CellStyle boldStyle) {
   for (int i = 0; i < headerCells.length; i++) {
     var cell = sheetObject.cell(
         CellIndex.indexByColumnRow(columnIndex: i, rowIndex: _kRowHeader));

@@ -22,14 +22,15 @@ String? determineLocale(String path) {
   if (idx < 0) {
     return null;
   }
-  var result = path.substring(idx+1);
+  var result = path.substring(idx + 1);
   if (result.toLowerCase() != result) {
-    idx = path.lastIndexOf("_", idx-1);
+    idx = path.lastIndexOf("_", idx - 1);
   }
-  return path.substring(idx+1);
+  return path.substring(idx + 1);
 }
 
-void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter? filter, String? reviewMarkerProperty}) {
+void readArbItems(File f, Map<String, ARBItem> items, String locale,
+    {ARBFilter? filter, String? reviewMarkerProperty}) {
   final s = f.readAsStringSync();
   final m = jsonDecode(s);
   var filename = withoutExtension(basename(f.path));
@@ -39,10 +40,15 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
         continue;
       }
       final meta = m['@${e.key}'];
-      if (filter != null && meta is Map<String, dynamic>? && !filter.accept(meta)) {
+      if (filter != null &&
+          meta is Map<String, dynamic>? &&
+          !filter.accept(meta)) {
         continue;
       }
-      final item = items.putIfAbsent(e.key, () => ARBItem(messageKey: e.key, filename: filename, translations: {}));
+      final item = items.putIfAbsent(
+          e.key,
+          () =>
+              ARBItem(messageKey: e.key, filename: filename, translations: {}));
       item.translations[locale] = e.value.toString();
       if (meta is Map) {
         final d = meta['description'];
@@ -78,8 +84,11 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
 /// Parses .arb files to [Translation].
 /// The [filename] is the main language arb file or the name of the directory.
 ///
-(Translation translation, List<String> files) parseARB(List<String> filenames, {List<String>? targetLocales,
-  String? leadLocale, ARBFilter? filter, String? reviewMarkerProperty}) {
+(Translation translation, List<String> files) parseARB(List<String> filenames,
+    {List<String>? targetLocales,
+    String? leadLocale,
+    ARBFilter? filter,
+    String? reviewMarkerProperty}) {
   var arbItems = <String, ARBItem>{};
   var locales = <String>[];
   List<String> files = [];
@@ -100,11 +109,13 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
       if (locale == null) {
         continue;
       }
-      if (locale == leadLocale || (leadLocale == null && locales.isEmpty) ||
+      if (locale == leadLocale ||
+          (leadLocale == null && locales.isEmpty) ||
           (targetLocales == null || targetLocales.contains(locale))) {
         files.add(f.path);
         locales.add(locale);
-        readArbItems(f, arbItems, locale, filter: filter, reviewMarkerProperty: reviewMarkerProperty);
+        readArbItems(f, arbItems, locale,
+            filter: filter, reviewMarkerProperty: reviewMarkerProperty);
       }
     }
   }
@@ -116,8 +127,10 @@ void readArbItems(File f, Map<String, ARBItem> items, String locale, {ARBFilter?
 /// Read the existing translations from the ARB files defined by [filenames]
 /// and merge the data from an excel input into the ARB files.
 ///
-Translation mergeARB(List<String> filenames, Translation excelInputData, { ARBFilter? filter}) {
-  Translation arbFileItems = parseARB(filenames, reviewMarkerProperty: filter?.property).$1;
+Translation mergeARB(List<String> filenames, Translation excelInputData,
+    {ARBFilter? filter}) {
+  Translation arbFileItems =
+      parseARB(filenames, reviewMarkerProperty: filter?.property).$1;
   arbFileItems.quoteMessages();
   var existingArbItems = arbFileItems.itemsAsMap;
   for (final item in excelInputData.items) {
@@ -133,24 +146,32 @@ Translation mergeARB(List<String> filenames, Translation excelInputData, { ARBFi
 
 /// Writes [Translation] to .arb files.
 void writeARB(String inputFilename, List<String> filenames, Translation data,
-    {required bool includeLeadLocale, bool merge = false, String? leadLocale, ARBFilter? filter}) {
+    {required bool includeLeadLocale,
+    bool merge = false,
+    String? leadLocale,
+    ARBFilter? filter}) {
   var basename = withoutExtension(filenames.first);
   if (merge) {
     data = mergeARB(filenames, data, filter: filter);
   }
   var fn = data.items.first.filename;
-  if (fn != null && filenames.length == 1 && FileSystemEntity.isDirectorySync(filenames.first)) {
+  if (fn != null &&
+      filenames.length == 1 &&
+      FileSystemEntity.isDirectorySync(filenames.first)) {
     basename = join(filenames.first, withoutExtension(fn));
   }
   basename = baseFilename(basename);
   for (var i = 0; i < data.languages.length; i++) {
     final lang = data.languages[i];
-    final isDefault = includeLeadLocale && ((leadLocale != null && lang == leadLocale) || (leadLocale == null && i == 0));
+    final isDefault = includeLeadLocale &&
+        ((leadLocale != null && lang == leadLocale) ||
+            (leadLocale == null && i == 0));
     final f = File('${basename}_$lang.arb');
     var buf = <String?>[];
     buf.add('  "@@locale": "$lang"');
     for (final item in data.items) {
-      final data = item.toJSON(lang, isDefault: isDefault, reviewedProperty: filter?.property);
+      final data = item.toJSON(lang,
+          isDefault: isDefault, reviewedProperty: filter?.property);
       if (data != null) {
         buf.add(data);
       }
@@ -158,7 +179,8 @@ void writeARB(String inputFilename, List<String> filenames, Translation data,
     final nl = Platform.lineTerminator;
     buf = ['{', buf.join(',$nl'), '}$nl'];
     if (merge) {
-      stdout.writeln('Merging ARB file ${f.path} with input from: $inputFilename');
+      stdout.writeln(
+          'Merging ARB file ${f.path} with input from: $inputFilename');
     } else {
       stdout.writeln('Generating ARB file ${f.path} from: $inputFilename');
     }
@@ -176,10 +198,11 @@ class ARBFilter {
   ARBFilter.parse(String filterDefinition) {
     var idx = filterDefinition.indexOf(":");
     if (idx < 0) {
-      throw Exception("Wrong ARB filter definition. Use syntax: propertyname:value");
+      throw Exception(
+          "Wrong ARB filter definition. Use syntax: propertyname:value");
     }
     property = filterDefinition.substring(0, idx);
-    var f = filterDefinition.substring(idx+1);
+    var f = filterDefinition.substring(idx + 1);
     value = bool.tryParse(f) ?? f;
   }
 
@@ -198,7 +221,7 @@ class ARBItem {
     this.translations = const {},
   });
 
-  Map<String,String> getPlaceholders(String text) {
+  Map<String, String> getPlaceholders(String text) {
     final matches = _kRegArgs.allMatches(text);
     for (final m in matches) {
       final arg = m.group(1);
@@ -213,23 +236,27 @@ class ARBItem {
   /// The message key used in the translation process to refer to the message.
   ///
   final String messageKey;
+
   ///
   /// The base file name of the file, where this message is defined (e.g. test.arb rather than test_de.arb).
   ///
   final String? filename;
+
   ///
   /// An optional context
   String? context;
   String? description;
+
   ///
   /// Whether the entry for a locale was marked for review.
   ///
-  final Map<String,bool> reviewedMarker = {};
+  final Map<String, bool> reviewedMarker = {};
   final Map<String, String> translations;
   final Map<String, String> placeHolderDescriptions = {};
 
   /// Serialize in JSON.
-  String? toJSON(String lang, {bool isDefault = false, String? reviewedProperty = "x-reviewed"}) {
+  String? toJSON(String lang,
+      {bool isDefault = false, String? reviewedProperty = "x-reviewed"}) {
     final value = translations[lang];
     if (value == null || value.isEmpty) {
       return null;
@@ -237,7 +264,11 @@ class ARBItem {
 
     final placeHolders = getPlaceholders(value);
     final needsReview = reviewedMarker[lang] == false;
-    final hasMetadata = needsReview || (isDefault && (placeHolders.isNotEmpty || description != null || context != null));
+    final hasMetadata = needsReview ||
+        (isDefault &&
+            (placeHolders.isNotEmpty ||
+                description != null ||
+                context != null));
 
     final List<String> buf = [];
     final nl = Platform.lineTerminator;
@@ -260,7 +291,8 @@ class ARBItem {
         sb.writeln('    "placeholders": {');
         final List<String> group = [];
         for (final placeholder in placeHolders.entries) {
-          group.add('      "${placeholder.key}": {"description": "${placeholder.value}"}');
+          group.add(
+              '      "${placeholder.key}": {"description": "${placeholder.value}"}');
         }
         sb.writeln(group.join(',$nl'));
         sb.write('    }');
@@ -296,7 +328,8 @@ class Translation {
   final List<String> languages;
   final List<ARBItem> items;
 
-  Map<String, ARBItem> get itemsAsMap => {for (final i in items) i.messageKey: i};
+  Map<String, ARBItem> get itemsAsMap =>
+      {for (final i in items) i.messageKey: i};
 
   String _quote(String s) => s.replaceAll("\n", "\\n");
 
